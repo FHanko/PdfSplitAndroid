@@ -1,9 +1,11 @@
 package com.github.fhanko.pdfsplit
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.net.Uri
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.tom_roush.pdfbox.pdmodel.PDDocument
+import com.tom_roush.pdfbox.rendering.PDFRenderer
 import java.io.File
 import java.io.FileInputStream
 
@@ -19,12 +21,9 @@ sealed class Document {
         fun merge(with: PdfFile) =
             with.document.pages.forEach { document.addPage(it) }
 
-        fun save() = document.save(name)
-
-        fun cachePreview(context: Context): File {
-            val file = File(context.cacheDir, "preview.pdf")
-            document.save(file)
-            return file
+        fun image(page: Int): Bitmap {
+            val renderer = PDFRenderer(document)
+            return renderer.renderImage(page, 1.5f)
         }
 
         companion object {

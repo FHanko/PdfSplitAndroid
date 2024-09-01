@@ -9,6 +9,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -31,12 +36,17 @@ class MainActivity : ComponentActivity() {
                     topBar = { TopAppBar(title = { Text("PDF Split") }) }
                 ) { innerPadding ->
                     val navController = rememberNavController()
+                    val pdfs = remember { mutableStateListOf<PdfFile>() }
+                    var previewPdf by remember { mutableStateOf<PdfFile?>(null) }
                     NavHost(navController = navController, startDestination = HomeScreen) {
                         composable<HomeScreen> {
-                            HomeContent(innerPadding, applicationContext, navController)
+                            HomeContent(innerPadding, applicationContext, pdfs) { preview ->
+                                previewPdf = preview
+                                navController.navigate(PreviewScreen)
+                            }
                         }
                         composable<PreviewScreen> {
-
+                            PreviewContent(innerPadding, previewPdf)
                         }
                     }
                 }

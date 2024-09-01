@@ -24,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,15 +40,19 @@ import kotlinx.serialization.Serializable
 object HomeScreen
 
 @Composable
-fun HomeContent(paddingValues: PaddingValues, context: Context, navController: NavHostController) {
-    var expressionInput by remember { mutableStateOf("") }
-    val docList = remember { mutableStateListOf<PdfFile>() }
+fun HomeContent(
+    paddingValues: PaddingValues,
+    context: Context,
+    pdfs: MutableList<PdfFile>,
+    previewCallback: (PdfFile) -> Unit
+) {
+    var expressionInput by rememberSaveable { mutableStateOf("") }
     val docLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.OpenDocument()) {
         it?.let { uri ->
-            when (val pdf = PdfFile.load(context, (docList.maxOfOrNull { doc -> doc.id } ?: 0) + 1, uri)) {
+            when (val pdf = PdfFile.load(context, (pdfs.maxOfOrNull { doc -> doc.id } ?: 0) + 1, uri)) {
                 Document.Invalid -> { /* TODO */ }
                 is PdfFile -> {
-                    docList.add(pdf)
+                    pdfs.add(pdf)
                     expressionInput += "${if (expressionInput.isNotEmpty()) "\n" else ""}${pdf.id}:1-${pdf.pages}"
                 }
             }
@@ -68,7 +73,7 @@ fun HomeContent(paddingValues: PaddingValues, context: Context, navController: N
         ) { Text(text = "Select PDF", style = Typography.bodyLarge) }
         // Document List
         Surface {
-            DocTable(content = docList)
+            DocTable(content = pdfs)
         }
         // Expression Input
         TextField(
@@ -81,7 +86,9 @@ fun HomeContent(paddingValues: PaddingValues, context: Context, navController: N
         // Preview & Save
         Row(modifier = Modifier.height(48.dp)) {
             Button(
-                onClick = { navController.navigate(PreviewScreen) },
+                onClick = {
+                    previewCallback(pdfs[0])
+                },
                 colors = ButtonColors(colorScheme.primaryContainer, colorScheme.primary, colorScheme.errorContainer, colorScheme.error),
                 shape = RectangleShape,
                 modifier = Modifier
