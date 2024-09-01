@@ -50,7 +50,7 @@ android {
 }
 
 dependencies {
-
+    implementation(libs.better.parse)
     implementation(libs.pdfbox.android)
 
     implementation(libs.androidx.core.ktx)

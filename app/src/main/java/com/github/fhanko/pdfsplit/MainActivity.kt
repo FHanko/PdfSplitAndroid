@@ -1,6 +1,8 @@
 package com.github.fhanko.pdfsplit
 
+import android.graphics.pdf.PdfRenderer
 import android.os.Bundle
+import android.os.ParcelFileDescriptor
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -60,111 +62,123 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-@Composable
-fun MainContent(paddingValues: PaddingValues) {
-    val docList = remember { mutableStateListOf<PdfFile>() }
-    val docLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.OpenDocument()) {
-        it?.let { uri ->
-            when (val pdf = PdfFile.load(applicationContext, (docList.maxOfOrNull { doc -> doc.id } ?: 0) + 1, uri)) {
-                Document.Invalid -> { /* TODO */ }
-                is PdfFile -> { docList.add(pdf) }
+    @Composable
+    fun MainContent(paddingValues: PaddingValues) {
+        var expressionInput by remember { mutableStateOf("") }
+        val docList = remember { mutableStateListOf<PdfFile>() }
+        val docLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.OpenDocument()) {
+            it?.let { uri ->
+                when (val pdf = PdfFile.load(applicationContext, (docList.maxOfOrNull { doc -> doc.id } ?: 0) + 1, uri)) {
+                    Document.Invalid -> { /* TODO */ }
+                    is PdfFile -> {
+                        docList.add(pdf)
+                        expressionInput += "${if (expressionInput.isNotEmpty()) "\n" else ""}${pdf.id}:1-${pdf.pages}"
+                    }
+                }
             }
         }
-    }
-    var expressionInput by remember { mutableStateOf("") }
 
-    Column {
-        // File Picker
-        Button(
-            onClick = {
-                docLauncher.launch(arrayOf("application/pdf"))
-            },
-            shape = RectangleShape,
-            modifier = Modifier
-                .padding(top = paddingValues.calculateTopPadding())
-                .fillMaxWidth()
-                .height(48.dp)
-        ) { Text(text = "Select PDF", style = Typography.bodyLarge) }
-        // Document List
-        Surface {
-            DocTable(content = docList)
-        }
-        // Expression Input
-        TextField(
-            value = expressionInput,
-            onValueChange = { expressionInput = it },
-            label = { Text("Expression") },
-            modifier = Modifier
-                .fillMaxWidth()
-        )
-        // Preview & Save
-        Row(modifier = Modifier.height(48.dp)) {
+        Column {
+            // File Picker
             Button(
-                onClick = { /*TODO*/ },
-                colors = ButtonColors(colorScheme.primaryContainer, colorScheme.primary, colorScheme.errorContainer, colorScheme.error),
+                onClick = {
+                    docLauncher.launch(arrayOf("application/pdf"))
+                },
                 shape = RectangleShape,
                 modifier = Modifier
-                    .fillMaxWidth(0.5f)
-                    .fillMaxHeight(),
-            ) {
-                Text("Preview", style = Typography.bodyLarge)
+                    .padding(top = paddingValues.calculateTopPadding())
+                    .fillMaxWidth()
+                    .height(48.dp)
+            ) { Text(text = "Select PDF", style = Typography.bodyLarge) }
+            // Document List
+            Surface {
+                DocTable(content = docList)
             }
-            VerticalDivider()
-            Button(
-                onClick = { /*TODO*/ },
-                colors = ButtonColors(colorScheme.primaryContainer, colorScheme.primary, colorScheme.errorContainer, colorScheme.error),
-                shape = RectangleShape,
-                modifier = Modifier.fillMaxSize(),
-            ) {
-                Text("Save", style = Typography.bodyLarge)
-            }
-        }
-    }
-}
-
-@Composable
-fun DocTable(content: List<PdfFile>) {
-    Column {
-        if (content.isNotEmpty()) {
-            Row(modifier = Modifier.height(32.dp).padding(top = 2.dp)) {
-                TableText("ID", 0.1f, TableTextStyle.Header)
-                VerticalDivider()
-                TableText("Filename", 0.6f, TableTextStyle.Header)
-                VerticalDivider()
-                TableText("Pages", 0.5f, TableTextStyle.Header)
-            }
-            HorizontalDivider()
-        }
-        content.forEach { pdf ->
-            Row(modifier = Modifier.height(48.dp), verticalAlignment = Alignment.CenterVertically) {
-                TableText("${pdf.id}", 0.1f, TableTextStyle.Content)
-                VerticalDivider()
-                TableText(pdf.name, 0.6f, TableTextStyle.Content)
-                VerticalDivider()
-                TableText("${pdf.pages}", 0.5f, TableTextStyle.Content)
+            // Expression Input
+            TextField(
+                value = expressionInput,
+                onValueChange = { expressionInput = it },
+                label = { Text("Select pages") },
+                modifier = Modifier
+                    .fillMaxWidth()
+            )
+            // Preview & Save
+            Row(modifier = Modifier.height(48.dp)) {
+                Button(
+                    onClick = { preview(docList) },
+                    colors = ButtonColors(colorScheme.primaryContainer, colorScheme.primary, colorScheme.errorContainer, colorScheme.error),
+                    shape = RectangleShape,
+                    modifier = Modifier
+                        .fillMaxWidth(0.5f)
+                        .fillMaxHeight(),
+                ) {
+                    Text("Preview", style = Typography.bodyLarge)
+                }
                 VerticalDivider()
                 Button(
                     onClick = { /*TODO*/ },
-                    colors = ButtonColors(colorScheme.errorContainer, colorScheme.error, colorScheme.errorContainer, colorScheme.error),
+                    colors = ButtonColors(colorScheme.primaryContainer, colorScheme.primary, colorScheme.errorContainer, colorScheme.error),
                     shape = RectangleShape,
-                    modifier = Modifier.fillMaxWidth().padding(6.dp)
+                    modifier = Modifier.fillMaxSize(),
                 ) {
-                    Text(text = "X")
+                    Text("Save", style = Typography.bodyLarge)
                 }
             }
-            HorizontalDivider()
         }
     }
-}
 
-enum class TableTextStyle(val style: TextStyle) { Header(Typography.titleMedium), Content(Typography.bodyLarge) }
-@Composable
-fun TableText(text: String, width: Float, style: TableTextStyle) {
-    Text(
-        text = text, style = style.style,
-        modifier = Modifier
-            .fillMaxWidth(width)
-            .padding(start = 6.dp, end = 6.dp)
-    )
-}
+    @Composable
+    fun DocTable(content: MutableList<PdfFile>) {
+        Column {
+            if (content.isNotEmpty()) {
+                Row(modifier = Modifier.height(32.dp).padding(top = 2.dp)) {
+                    TableText("ID", 0.1f, TableTextStyle.Header)
+                    VerticalDivider()
+                    TableText("Filename", 0.6f, TableTextStyle.Header)
+                    VerticalDivider()
+                    TableText("Pages", 0.5f, TableTextStyle.Header)
+                }
+                HorizontalDivider()
+            }
+            content.forEach { pdf ->
+                Row(modifier = Modifier.height(48.dp), verticalAlignment = Alignment.CenterVertically) {
+                    TableText("${pdf.id}", 0.1f, TableTextStyle.Content)
+                    VerticalDivider()
+                    TableText(pdf.name, 0.6f, TableTextStyle.Content)
+                    VerticalDivider()
+                    TableText("${pdf.pages}", 0.5f, TableTextStyle.Content)
+                    VerticalDivider()
+                    Button(
+                        onClick = {
+                            content.remove(pdf)
+                        },
+                        colors = ButtonColors(colorScheme.errorContainer, colorScheme.error, colorScheme.errorContainer, colorScheme.error),
+                        shape = RectangleShape,
+                        modifier = Modifier.fillMaxWidth().padding(6.dp)
+                    ) {
+                        Text(text = "X")
+                    }
+                }
+                HorizontalDivider()
+            }
+        }
+    }
+
+    enum class TableTextStyle(val style: TextStyle) { Header(Typography.titleMedium), Content(Typography.bodyLarge) }
+    @Composable
+    fun TableText(text: String, width: Float, style: TableTextStyle) {
+        Text(
+            text = text, style = style.style,
+            modifier = Modifier
+                .fillMaxWidth(width)
+                .padding(start = 6.dp, end = 6.dp)
+        )
+    }
+
+    private fun preview(pdfs: List<PdfFile>) {
+        val file = pdfs[0].cachePreview(applicationContext)
+        val fd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+        val renderer = PdfRenderer(fd)
+        renderer.openPage(0)
+    }
 }
