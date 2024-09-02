@@ -35,6 +35,7 @@ import androidx.navigation.NavHostController
 import com.github.fhanko.pdfsplit.Document.PdfFile
 import com.github.fhanko.pdfsplit.ui.theme.Typography
 import kotlinx.serialization.Serializable
+import java.io.File
 
 @Serializable
 object HomeScreen
@@ -99,7 +100,9 @@ fun HomeContent(
             }
             VerticalDivider()
             Button(
-                onClick = { /*TODO*/ },
+                onClick = {
+                    pdfs[0].save(File("${context.filesDir.path}/${pdfs[0].name}"))
+                },
                 colors = ButtonColors(colorScheme.primaryContainer, colorScheme.primary, colorScheme.errorContainer, colorScheme.error),
                 shape = RectangleShape,
                 modifier = Modifier.fillMaxSize(),

@@ -46,7 +46,7 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                         composable<PreviewScreen> {
-                            PreviewContent(innerPadding, previewPdf)
+                            PreviewContent(innerPadding, applicationContext, previewPdf)
                         }
                     }
                 }
