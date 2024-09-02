@@ -17,8 +17,10 @@ sealed class Document {
 
         fun import(from: PdfFile, pages: List<Int>) {
             val temp = scratch()
-            from.document.pages.forEachIndexed { i, page ->
-                if (pages.contains(i)) temp.document.importPage(page)
+            pages.forEach {
+                if (it < 0 || it >= from.document.numberOfPages) throw PageOutOfBounds(from.id, it)
+
+                temp.document.importPage(from.document.getPage(it))
             }
             merge(temp)
         }
