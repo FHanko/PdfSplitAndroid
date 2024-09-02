@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,6 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.serialization.Serializable
 import com.github.fhanko.pdfsplit.Document.PdfFile
+import my.nanihadesuka.compose.LazyColumnScrollbar
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 import java.io.File
@@ -36,29 +38,37 @@ fun PreviewContent(paddingValues: PaddingValues, context: Context, pdf: PdfFile?
     val screenWidth = context.resources.displayMetrics.widthPixels
     pdf.save(file)
 
-    LazyColumn(modifier = Modifier
-        .padding(top = paddingValues.calculateTopPadding())
-        .fillMaxHeight()
-        .zoomable(rememberZoomState())
-        .background(Color.White)
+    val listState = rememberLazyListState()
+    LazyColumnScrollbar(
+        state = listState,
+        modifier = Modifier.padding(top = paddingValues.calculateTopPadding())
     ) {
-        items(pdf.pages) { page ->
-            val fileDescriptor = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
-            val img = Bitmap.createBitmap(
-                screenWidth,
-                (screenWidth.toFloat() / pdf.pageWidth(page) * pdf.pageHeight(page)).toInt(),
-                Bitmap.Config.ARGB_8888
-            )
-            PdfRenderer(fileDescriptor).openPage(page).render(img, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-            Image(img.asImageBitmap(), "Pdf preview page $page")
-            Text(
-                text = "Page ${page + 1}",
-                modifier = Modifier
-                    .padding(bottom = 6.dp, top = 2.dp)
-                    .fillMaxWidth(),
-                textAlign = TextAlign.Center,
-            )
-            HorizontalDivider(thickness = 3.dp)
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxHeight()
+                .zoomable(rememberZoomState())
+                .background(Color.White),
+            state = listState
+        ) {
+            items(pdf.pages) { page ->
+                val fileDescriptor = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+                val img = Bitmap.createBitmap(
+                    screenWidth,
+                    (screenWidth.toFloat() / pdf.pageWidth(page) * pdf.pageHeight(page)).toInt(),
+                    Bitmap.Config.ARGB_8888
+                )
+                PdfRenderer(fileDescriptor).openPage(page)
+                    .render(img, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                Image(img.asImageBitmap(), "Pdf preview page $page")
+                Text(
+                    text = "Page ${page + 1}",
+                    modifier = Modifier
+                        .padding(bottom = 6.dp, top = 2.dp)
+                        .fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                )
+                HorizontalDivider(thickness = 3.dp)
+            }
         }
     }
 }

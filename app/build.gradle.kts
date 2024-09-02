@@ -61,6 +61,8 @@ dependencies {
 
     implementation(libs.zoomable)
 
+    implementation(libs.nanihadesuka.lazycolumnscrollbar)
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
