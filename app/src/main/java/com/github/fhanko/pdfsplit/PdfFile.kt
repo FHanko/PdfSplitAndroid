@@ -1,15 +1,14 @@
 package com.github.fhanko.pdfsplit
 
+import android.content.ContentResolver
 import android.content.Context
-import android.graphics.Bitmap
 import android.net.Uri
+import android.provider.OpenableColumns
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import com.tom_roush.pdfbox.pdmodel.PDDocument
-import com.tom_roush.pdfbox.rendering.ImageType
-import com.tom_roush.pdfbox.rendering.PDFRenderer
-import com.tom_roush.pdfbox.rendering.RenderDestination
 import java.io.File
 import java.io.FileInputStream
+
 
 sealed class Document {
     class PdfFile private constructor(private val document: PDDocument, val id: Int, val name: String): Document() {
@@ -35,7 +34,7 @@ sealed class Document {
             }
 
             fun load(context: Context, id: Int, uri: Uri): Document {
-                val name = uri.path?.split('/')?.last() ?: "Error"
+                val name = queryName(context.contentResolver, uri)
                 context.contentResolver.openFileDescriptor(uri, "r")?.use {
                     return PdfFile(PDDocument.load(FileInputStream(it.fileDescriptor)), id, name)
                 }
@@ -47,4 +46,14 @@ sealed class Document {
     }
 
     data object Invalid: Document()
+}
+
+private fun queryName(resolver: ContentResolver, uri: Uri): String {
+    val returnCursor =
+        resolver.query(uri, null, null, null, null) ?: return "Error"
+    val nameIndex = returnCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+    returnCursor.moveToFirst()
+    val name = returnCursor.getString(nameIndex)
+    returnCursor.close()
+    return name
 }
