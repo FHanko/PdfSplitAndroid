@@ -2,7 +2,6 @@ package com.github.fhanko.pdfsplit
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
@@ -49,7 +48,7 @@ import java.io.File
 object HomeScreen
 
 @Composable
-fun HomeContent(
+fun MainActivity.HomeContent(
     paddingValues: PaddingValues,
     context: Context,
     pdfs: MutableList<PdfFile>,
@@ -110,21 +109,24 @@ fun HomeContent(
             VerticalDivider()
             Button(
                 onClick = {
-                    val file = File("${context.filesDir}/PdfSplit.pdf")
+                    val file = File(filesDir.path + "/PdfSplit.pdf")
                     ExpressionGrammar(pdfs).parseToEnd(expressionInput).save(file)
-                    val target = Intent(Intent.ACTION_VIEW)
                     val uri = FileProvider.getUriForFile(context, context.packageName + ".provider", file)
-                    target.setDataAndType(uri, "application/pdf")
-                    target.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
-                    val intent = Intent.createChooser(target, "Open Pdf")
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    context.startActivity(intent)
+                    val intent = Intent.createChooser(Intent(),"Open Pdf")
+                    intent.setAction(Intent.ACTION_VIEW)
+                    intent.setDataAndType(uri, "application/pdf")
+                    intent.addFlags(
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                            Intent.FLAG_ACTIVITY_NO_HISTORY
+                    )
+                    startActivity(intent)
                 },
                 colors = ButtonColors(colorScheme.primaryContainer, colorScheme.primary, colorScheme.errorContainer, colorScheme.error),
                 shape = RectangleShape,
                 modifier = Modifier.fillMaxSize(),
             ) {
-                Text("Save", style = Typography.bodyLarge)
+                Text("Open", style = Typography.bodyLarge)
             }
         }
     }

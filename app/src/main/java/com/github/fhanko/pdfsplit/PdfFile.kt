@@ -5,6 +5,7 @@ import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
+import com.tom_roush.pdfbox.multipdf.PDFMergerUtility
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import java.io.File
 import java.io.FileInputStream
@@ -15,13 +16,17 @@ sealed class Document {
         val pages = document.numberOfPages
 
         fun import(from: PdfFile, pages: List<Int>) {
+            val temp = scratch()
             from.document.pages.forEachIndexed { i, page ->
-                if (pages.contains(i)) document.importPage(page)
+                if (pages.contains(i)) temp.document.importPage(page)
             }
+            merge(temp)
         }
 
-        fun merge(with: PdfFile) =
-            with.document.pages.forEach { document.importPage(it) }
+        fun merge(with: PdfFile) {
+            val merger = PDFMergerUtility()
+            merger.appendDocument(document, with.document)
+        }
 
         fun save(file: File) = document.save(file)
 
