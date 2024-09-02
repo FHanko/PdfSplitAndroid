@@ -1,6 +1,8 @@
 package com.github.fhanko.pdfsplit
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
@@ -11,9 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
@@ -37,9 +37,11 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.navigation.NavController
 import com.github.fhanko.pdfsplit.Document.PdfFile
 import com.github.fhanko.pdfsplit.ui.theme.Typography
+import com.github.h0tk3y.betterParse.grammar.parseToEnd
 import kotlinx.serialization.Serializable
 import java.io.File
 
@@ -94,7 +96,7 @@ fun HomeContent(
         Row(modifier = Modifier.height(48.dp)) {
             Button(
                 onClick = {
-                    pdfs[0].save(previewFile(context))
+                    ExpressionGrammar(pdfs).parseToEnd(expressionInput).save(previewFile(context))
                     navController.navigate(PreviewScreen)
                 },
                 colors = ButtonColors(colorScheme.primaryContainer, colorScheme.primary, colorScheme.errorContainer, colorScheme.error),
@@ -108,7 +110,15 @@ fun HomeContent(
             VerticalDivider()
             Button(
                 onClick = {
-                    pdfs[0].save(File("${context.filesDir.path}/${pdfs[0].name}"))
+                    val file = File("${context.filesDir}/PdfSplit.pdf")
+                    ExpressionGrammar(pdfs).parseToEnd(expressionInput).save(file)
+                    val target = Intent(Intent.ACTION_VIEW)
+                    val uri = FileProvider.getUriForFile(context, context.packageName + ".provider", file)
+                    target.setDataAndType(uri, "application/pdf")
+                    target.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
+                    val intent = Intent.createChooser(target, "Open Pdf")
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(intent)
                 },
                 colors = ButtonColors(colorScheme.primaryContainer, colorScheme.primary, colorScheme.errorContainer, colorScheme.error),
                 shape = RectangleShape,
@@ -124,7 +134,9 @@ fun HomeContent(
 fun DocTable(content: MutableList<PdfFile>) {
     Column {
         if (content.isNotEmpty()) {
-            Row(modifier = Modifier.height(32.dp).padding(top = 2.dp)) {
+            Row(modifier = Modifier
+                .height(32.dp)
+                .padding(top = 2.dp)) {
                 TableText("ID", 0.1f, TableTextStyle.Header)
                 VerticalDivider()
                 TableText("Filename", 0.6f, TableTextStyle.Header)
@@ -147,7 +159,9 @@ fun DocTable(content: MutableList<PdfFile>) {
                     },
                     colors = ButtonColors(colorScheme.errorContainer, colorScheme.error, colorScheme.errorContainer, colorScheme.error),
                     shape = RectangleShape,
-                    modifier = Modifier.fillMaxWidth().padding(8.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
                 ) {
                     Icon(imageVector = Icons.Filled.Close, "Remove pdf", tint = Color.Red,
                         modifier = Modifier.fillMaxSize())
