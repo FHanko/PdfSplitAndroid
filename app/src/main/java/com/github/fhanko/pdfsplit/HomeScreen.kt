@@ -32,12 +32,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.github.fhanko.pdfsplit.Document.PdfFile
 import com.github.fhanko.pdfsplit.ui.theme.Typography
 import kotlinx.serialization.Serializable
@@ -51,7 +51,7 @@ fun HomeContent(
     paddingValues: PaddingValues,
     context: Context,
     pdfs: MutableList<PdfFile>,
-    previewCallback: (PdfFile) -> Unit
+    navController: NavController
 ) {
     var expressionInput by rememberSaveable { mutableStateOf("") }
     val docLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.OpenDocument()) {
@@ -94,7 +94,8 @@ fun HomeContent(
         Row(modifier = Modifier.height(48.dp)) {
             Button(
                 onClick = {
-                    previewCallback(pdfs[0])
+                    pdfs[0].save(previewFile(context))
+                    navController.navigate(PreviewScreen)
                 },
                 colors = ButtonColors(colorScheme.primaryContainer, colorScheme.primary, colorScheme.errorContainer, colorScheme.error),
                 shape = RectangleShape,

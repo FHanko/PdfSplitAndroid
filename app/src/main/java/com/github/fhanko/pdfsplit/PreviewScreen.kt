@@ -21,22 +21,22 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.serialization.Serializable
-import com.github.fhanko.pdfsplit.Document.PdfFile
 import my.nanihadesuka.compose.LazyColumnScrollbar
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 import java.io.File
 
+fun previewFile(context: Context): File = File("${context.cacheDir}/preview")
+
 @Serializable
 object PreviewScreen
 
 @Composable
-fun PreviewContent(paddingValues: PaddingValues, context: Context, pdf: PdfFile?) {
-    if (pdf == null) return
-
-    val file = File("${context.cacheDir}/preview")
+fun PreviewContent(paddingValues: PaddingValues, context: Context) {
     val screenWidth = context.resources.displayMetrics.widthPixels
-    pdf.save(file)
+
+    val fileDescriptor = ParcelFileDescriptor.open(previewFile(context), ParcelFileDescriptor.MODE_READ_ONLY)
+    val renderer = PdfRenderer(fileDescriptor)
 
     val listState = rememberLazyListState()
     LazyColumnScrollbar(
@@ -50,24 +50,24 @@ fun PreviewContent(paddingValues: PaddingValues, context: Context, pdf: PdfFile?
                 .background(Color.White),
             state = listState
         ) {
-            items(pdf.pages) { page ->
-                val fileDescriptor = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+            items(renderer.pageCount) { pageIndex ->
+                val page = renderer.openPage(pageIndex)
                 val img = Bitmap.createBitmap(
                     screenWidth,
-                    (screenWidth.toFloat() / pdf.pageWidth(page) * pdf.pageHeight(page)).toInt(),
+                    (screenWidth.toFloat() / page.width * page.height).toInt(),
                     Bitmap.Config.ARGB_8888
                 )
-                PdfRenderer(fileDescriptor).openPage(page)
-                    .render(img, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                Image(img.asImageBitmap(), "Pdf preview page $page")
+                page.render(img, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                Image(img.asImageBitmap(), "Pdf preview page $pageIndex")
                 Text(
-                    text = "Page ${page + 1}",
+                    text = "Page ${pageIndex + 1}",
                     modifier = Modifier
                         .padding(bottom = 6.dp, top = 2.dp)
                         .fillMaxWidth(),
                     textAlign = TextAlign.Center,
                 )
                 HorizontalDivider(thickness = 3.dp)
+                page.close()
             }
         }
     }

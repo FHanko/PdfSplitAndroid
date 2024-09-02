@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.dialog
 import androidx.navigation.compose.rememberNavController
 import com.github.fhanko.pdfsplit.ui.theme.PdfSplitTheme
 import com.github.fhanko.pdfsplit.Document.PdfFile
@@ -37,16 +38,12 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     val navController = rememberNavController()
                     val pdfs = remember { mutableStateListOf<PdfFile>() }
-                    var previewPdf by remember { mutableStateOf<PdfFile?>(null) }
                     NavHost(navController = navController, startDestination = HomeScreen) {
                         composable<HomeScreen> {
-                            HomeContent(innerPadding, applicationContext, pdfs) { preview ->
-                                previewPdf = preview
-                                navController.navigate(PreviewScreen)
-                            }
+                            HomeContent(innerPadding, applicationContext, pdfs, navController)
                         }
-                        composable<PreviewScreen> {
-                            PreviewContent(innerPadding, applicationContext, previewPdf)
+                        dialog<PreviewScreen> {
+                            PreviewContent(innerPadding, applicationContext)
                         }
                     }
                 }
