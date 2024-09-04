@@ -33,9 +33,6 @@ sealed class Document {
 
         fun save(file: File) = document.save(file)
 
-        fun pageWidth(page: Int) = document.getPage(page).bBox.width
-        fun pageHeight(page: Int) = document.getPage(page).bBox.height
-
         companion object {
             fun init(context: Context) {
                 PDFBoxResourceLoader.init(context)
