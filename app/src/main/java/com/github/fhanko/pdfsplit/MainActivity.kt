@@ -40,7 +40,7 @@ class MainActivity : ComponentActivity() {
                             HomeContent(innerPadding, applicationContext, pdfs, navController)
                         }
                         dialog<PreviewScreen> {
-                            PreviewContent(innerPadding, applicationContext)
+                            PreviewContent(applicationContext)
                         }
                     }
                 }

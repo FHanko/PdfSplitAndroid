@@ -1,5 +1,7 @@
 package com.github.fhanko.pdfsplit
 
+import android.content.Context
+import android.widget.Toast
 import com.github.h0tk3y.betterParse.combinators.leftAssociative
 import com.github.h0tk3y.betterParse.combinators.times
 import com.github.h0tk3y.betterParse.combinators.unaryMinus
@@ -12,9 +14,19 @@ import com.github.fhanko.pdfsplit.Document.PdfFile
 import com.github.h0tk3y.betterParse.combinators.map
 import com.github.h0tk3y.betterParse.combinators.or
 import com.github.h0tk3y.betterParse.combinators.separated
+import com.github.fhanko.pdfsplit.ParsingException.PdfNotFoundException
+import com.github.h0tk3y.betterParse.grammar.parseToEnd
+import com.github.h0tk3y.betterParse.parser.AlternativesFailure
+import com.github.h0tk3y.betterParse.parser.MismatchedToken
+import com.github.h0tk3y.betterParse.parser.NoMatchingToken
+import com.github.h0tk3y.betterParse.parser.ParseException
+import com.github.h0tk3y.betterParse.parser.UnexpectedEof
+import com.github.h0tk3y.betterParse.parser.UnparsedRemainder
 
-class PdfNotFoundException(id: Int): Exception("Pdf with id $id not found.")
-class PageOutOfBounds(id: Int, page: Int): Exception("Pdf with id $id does not contain page $page.")
+sealed class ParsingException(message: String): Exception(message) {
+    class PdfNotFoundException(id: Int): ParsingException("Pdf with id $id not found.")
+    class PageOutOfBoundsException(id: Int, page: Int): ParsingException("Pdf with id $id does not contain page ${page + 1}.")
+}
 
 class ExpressionGrammar(private val pdfs: List<PdfFile>) : Grammar<PdfFile>() {
     private val ws by regexToken("[\\t\\f\\cK ]", ignore = true)
@@ -46,5 +58,34 @@ class ExpressionGrammar(private val pdfs: List<PdfFile>) : Grammar<PdfFile>() {
     override val rootParser by leftAssociative(line, nl) { l, _, r ->
         l.merge(r)
         l
+    }
+
+    fun parseCatching(context: Context, expression: String): Document {
+        try {
+            return parseToEnd(expression)
+        } catch (e: ParsingException) {
+            Toast.makeText(context, e.message, Toast.LENGTH_SHORT).show()
+        } catch (e: ParseException) {
+            var result = e.errorResult
+            if (result is AlternativesFailure) result = result.errors.first()
+            when (result) {
+                is UnparsedRemainder -> {
+                    Toast.makeText(context, "Unexpected symbol ${result.startsWith.text}" +
+                            " at line ${result.startsWith.row} position ${result.startsWith.column}.", Toast.LENGTH_SHORT).show()
+                }
+                is UnexpectedEof -> {
+                    Toast.makeText(context, "Unexpected abrupt selection ending.", Toast.LENGTH_SHORT).show()
+                }
+                is NoMatchingToken -> {
+                    Toast.makeText(context, "Unexpected symbols ${result.tokenMismatch.text} in selection.", Toast.LENGTH_SHORT).show()
+                }
+                is MismatchedToken -> {
+                    Toast.makeText(context, "Unexpected ${result.found.text} instead of ${result.expected}" +
+                            " at line ${result.found.row} position ${result.found.column}.", Toast.LENGTH_SHORT).show()
+                }
+                else -> error(e)
+            }
+        }
+        return Document.Invalid
     }
 }

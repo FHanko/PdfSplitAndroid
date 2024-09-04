@@ -41,7 +41,6 @@ import androidx.core.content.FileProvider
 import androidx.navigation.NavController
 import com.github.fhanko.pdfsplit.Document.PdfFile
 import com.github.fhanko.pdfsplit.ui.theme.Typography
-import com.github.h0tk3y.betterParse.grammar.parseToEnd
 import kotlinx.serialization.Serializable
 import java.io.File
 
@@ -186,30 +185,37 @@ private fun MainActivity.processPdf(
         return
     }
     val preparedExpression = prepareExpression(expression)
-    when (type) {
-        ProcessType.Preview -> {
-            ExpressionGrammar(pdfs).parseToEnd(preparedExpression).save(previewFile(applicationContext))
-            navController.navigate(PreviewScreen)
-        }
-        ProcessType.Open -> {
-            val file = File(filesDir.path + "/PdfSplit.pdf")
-            ExpressionGrammar(pdfs).parseToEnd(preparedExpression).save(file)
-            val uri = FileProvider.getUriForFile(applicationContext, "$packageName.provider", file)
-            val intent = Intent.createChooser(Intent(),"Open Pdf")
-            intent.setAction(Intent.ACTION_VIEW)
-            intent.setDataAndType(uri, "application/pdf")
-            intent.addFlags(
-                Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
-                        Intent.FLAG_ACTIVITY_NO_HISTORY
-            )
-            startActivity(intent)
+    val pdf = ExpressionGrammar(pdfs).parseCatching(applicationContext, preparedExpression)
+
+    if (pdf is PdfFile) {
+        when (type) {
+            ProcessType.Preview -> {
+                pdf.save(previewFile(applicationContext))
+                navController.navigate(PreviewScreen)
+            }
+
+            ProcessType.Open -> {
+                val file = File(filesDir.path + "/PdfSplit.pdf")
+                pdf.save(file)
+                val uri =
+                    FileProvider.getUriForFile(applicationContext, "$packageName.provider", file)
+                val intent = Intent.createChooser(Intent(), "Open Pdf")
+                intent.setAction(Intent.ACTION_VIEW)
+                intent.setDataAndType(uri, "application/pdf")
+                intent.addFlags(
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                            Intent.FLAG_ACTIVITY_NO_HISTORY
+                )
+                startActivity(intent)
+            }
         }
     }
 }
 
 private fun prepareExpression(expression: String): String {
     var result = expression.trim()
+    result = result.replace(",\n", "\n")
     while (result.contains("\n\n")) result = result.replace("\n\n", "\n")
     return result
 }

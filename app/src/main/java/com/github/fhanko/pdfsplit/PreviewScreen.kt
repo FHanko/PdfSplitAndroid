@@ -32,7 +32,7 @@ fun previewFile(context: Context): File = File("${context.cacheDir}/preview")
 object PreviewScreen
 
 @Composable
-fun PreviewContent(paddingValues: PaddingValues, context: Context) {
+fun PreviewContent(context: Context) {
     val screenWidth = context.resources.displayMetrics.widthPixels
 
     val fileDescriptor = ParcelFileDescriptor.open(previewFile(context), ParcelFileDescriptor.MODE_READ_ONLY)
@@ -40,8 +40,7 @@ fun PreviewContent(paddingValues: PaddingValues, context: Context) {
 
     val listState = rememberLazyListState()
     LazyColumnScrollbar(
-        state = listState,
-        modifier = Modifier.padding(top = paddingValues.calculateTopPadding())
+        state = listState
     ) {
         LazyColumn(
             modifier = Modifier

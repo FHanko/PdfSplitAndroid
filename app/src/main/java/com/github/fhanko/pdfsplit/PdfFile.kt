@@ -9,6 +9,7 @@ import com.tom_roush.pdfbox.multipdf.PDFMergerUtility
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import java.io.File
 import java.io.FileInputStream
+import com.github.fhanko.pdfsplit.ParsingException.PageOutOfBoundsException
 
 
 sealed class Document {
@@ -18,7 +19,7 @@ sealed class Document {
         fun import(from: PdfFile, pages: List<Int>) {
             val temp = scratch()
             pages.forEach {
-                if (it < 0 || it >= from.document.numberOfPages) throw PageOutOfBounds(from.id, it)
+                if (it < 0 || it >= from.document.numberOfPages) throw PageOutOfBoundsException(from.id, it)
 
                 temp.document.importPage(from.document.getPage(it))
             }
