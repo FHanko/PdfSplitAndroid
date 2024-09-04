@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.serialization.Serializable
@@ -31,7 +32,8 @@ fun previewFile(context: Context): File = File("${context.cacheDir}/preview")
 object PreviewScreen
 
 @Composable
-fun PreviewContent(context: Context) {
+fun PreviewContent() {
+    val context = LocalContext.current
     val screenWidth = context.resources.displayMetrics.widthPixels
 
     val fileDescriptor = ParcelFileDescriptor.open(previewFile(context), ParcelFileDescriptor.MODE_READ_ONLY)

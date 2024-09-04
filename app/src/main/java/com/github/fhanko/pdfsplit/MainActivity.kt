@@ -37,10 +37,10 @@ class MainActivity : ComponentActivity() {
                     val pdfs = remember { mutableStateListOf<PdfFile>() }
                     NavHost(navController = navController, startDestination = HomeScreen) {
                         composable<HomeScreen> {
-                            HomeContent(innerPadding, applicationContext, pdfs, navController)
+                            HomeContent(innerPadding, pdfs, navController)
                         }
                         dialog<PreviewScreen> {
-                            PreviewContent(applicationContext)
+                            PreviewContent()
                         }
                     }
                 }

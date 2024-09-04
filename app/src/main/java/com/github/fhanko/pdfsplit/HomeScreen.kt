@@ -1,6 +1,5 @@
 package com.github.fhanko.pdfsplit
 
-import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -34,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -50,10 +50,10 @@ object HomeScreen
 @Composable
 fun MainActivity.HomeContent(
     paddingValues: PaddingValues,
-    context: Context,
     pdfs: MutableList<PdfFile>,
     navController: NavController
 ) {
+    val context = LocalContext.current
     var expressionInput by rememberSaveable { mutableStateOf("") }
     val docLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.OpenDocument()) {
         it?.let { uri ->
