@@ -45,7 +45,6 @@ fun PreviewContent() {
     ) {
         LazyColumn(
             modifier = Modifier
-                .fillMaxHeight()
                 .zoomable(rememberZoomState())
                 .background(Color.White),
             state = listState

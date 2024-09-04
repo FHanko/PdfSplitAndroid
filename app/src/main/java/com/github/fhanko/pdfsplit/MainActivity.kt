@@ -5,7 +5,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -29,11 +33,22 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             PdfSplitTheme {
+                val navController = rememberNavController()
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
-                    topBar = { TopAppBar(title = { Text("PDF Split") }) }
+                    topBar = {
+                        TopAppBar(
+                            title = { Text("Pdf Split") },
+                            actions = {
+                                IconButton(onClick = {
+                                    navController.navigate(HelpScreen)
+                                }) {
+                                    Icon(imageVector = Icons.Filled.Info, "Help")
+                                }
+                            }
+                        )
+                    }
                 ) { innerPadding ->
-                    val navController = rememberNavController()
                     val pdfs = remember { mutableStateListOf<PdfFile>() }
                     NavHost(navController = navController, startDestination = HomeScreen) {
                         composable<HomeScreen> {
@@ -41,6 +56,9 @@ class MainActivity : ComponentActivity() {
                         }
                         dialog<PreviewScreen> {
                             PreviewContent()
+                        }
+                        dialog<HelpScreen> {
+                            HelpContent()
                         }
                     }
                 }

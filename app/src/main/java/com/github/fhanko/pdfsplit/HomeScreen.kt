@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
@@ -67,7 +69,10 @@ fun MainActivity.HomeContent(
         }
     }
 
-    Column {
+    Column(Modifier
+        .padding(bottom = 48.dp)
+        .verticalScroll(rememberScrollState())
+    ) {
         // File Picker
         Button(
             onClick = {
@@ -78,7 +83,7 @@ fun MainActivity.HomeContent(
                 .padding(top = paddingValues.calculateTopPadding())
                 .fillMaxWidth()
                 .height(48.dp)
-        ) { Text(text = "Select PDF", style = Typography.bodyLarge) }
+        ) { Text(text = "Select Pdf", style = Typography.bodyLarge) }
         // Document List
         Surface {
             DocTable(content = pdfs)
