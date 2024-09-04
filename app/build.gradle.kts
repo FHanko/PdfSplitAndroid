@@ -1,5 +1,3 @@
-import com.android.utils.TraceUtils.simpleId
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
@@ -7,6 +5,14 @@ plugins {
 }
 
 android {
+    signingConfigs {
+        create("PdfSplit") {
+            storeFile = file(properties["storeFile"].toString())
+            storePassword = properties["storePass"].toString()
+            keyAlias = properties["keyAlias"].toString()
+            keyPassword = properties["keyPass"].toString()
+        }
+    }
     namespace = "com.github.fhanko.pdfsplit"
     compileSdk = 34
 
@@ -26,11 +32,12 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
+            isDebuggable = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("PdfSplit")
         }
     }
     compileOptions {
