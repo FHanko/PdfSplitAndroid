@@ -2,6 +2,7 @@ package com.github.fhanko.pdfsplit
 
 import android.content.Context
 import android.content.Intent
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
@@ -95,8 +96,7 @@ fun MainActivity.HomeContent(
         Row(modifier = Modifier.height(48.dp)) {
             Button(
                 onClick = {
-                    ExpressionGrammar(pdfs).parseToEnd(expressionInput).save(previewFile(context))
-                    navController.navigate(PreviewScreen)
+                    processPdf(ProcessType.Preview, expressionInput, pdfs, navController)
                 },
                 colors = ButtonColors(colorScheme.primaryContainer, colorScheme.primary, colorScheme.errorContainer, colorScheme.error),
                 shape = RectangleShape,
@@ -109,18 +109,7 @@ fun MainActivity.HomeContent(
             VerticalDivider()
             Button(
                 onClick = {
-                    val file = File(filesDir.path + "/PdfSplit.pdf")
-                    ExpressionGrammar(pdfs).parseToEnd(expressionInput).save(file)
-                    val uri = FileProvider.getUriForFile(context, context.packageName + ".provider", file)
-                    val intent = Intent.createChooser(Intent(),"Open Pdf")
-                    intent.setAction(Intent.ACTION_VIEW)
-                    intent.setDataAndType(uri, "application/pdf")
-                    intent.addFlags(
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
-                            Intent.FLAG_ACTIVITY_NO_HISTORY
-                    )
-                    startActivity(intent)
+                    processPdf(ProcessType.Open, expressionInput, pdfs, navController)
                 },
                 colors = ButtonColors(colorScheme.primaryContainer, colorScheme.primary, colorScheme.errorContainer, colorScheme.error),
                 shape = RectangleShape,
@@ -183,4 +172,44 @@ fun TableText(text: String, width: Float, style: TableTextStyle) {
             .fillMaxWidth(width)
             .padding(start = 6.dp, end = 6.dp)
     )
+}
+
+enum class ProcessType { Preview, Open }
+private fun MainActivity.processPdf(
+    type: ProcessType,
+    expression: String,
+    pdfs: MutableList<PdfFile>,
+    navController: NavController
+) {
+    if (pdfs.size < 1) {
+        Toast.makeText(applicationContext, "Please select a pdf first.", Toast.LENGTH_SHORT).show()
+        return
+    }
+    val preparedExpression = prepareExpression(expression)
+    when (type) {
+        ProcessType.Preview -> {
+            ExpressionGrammar(pdfs).parseToEnd(preparedExpression).save(previewFile(applicationContext))
+            navController.navigate(PreviewScreen)
+        }
+        ProcessType.Open -> {
+            val file = File(filesDir.path + "/PdfSplit.pdf")
+            ExpressionGrammar(pdfs).parseToEnd(preparedExpression).save(file)
+            val uri = FileProvider.getUriForFile(applicationContext, "$packageName.provider", file)
+            val intent = Intent.createChooser(Intent(),"Open Pdf")
+            intent.setAction(Intent.ACTION_VIEW)
+            intent.setDataAndType(uri, "application/pdf")
+            intent.addFlags(
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                        Intent.FLAG_ACTIVITY_NO_HISTORY
+            )
+            startActivity(intent)
+        }
+    }
+}
+
+private fun prepareExpression(expression: String): String {
+    var result = expression.trim()
+    while (result.contains("\n\n")) result = result.replace("\n\n", "\n")
+    return result
 }
